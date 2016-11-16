@@ -11,11 +11,11 @@ from pykinect2 import PyKinectRuntime
 from Kfunc import *
 from Kfunc.IO import *
 from Kfunc.finger import *
-
+from Kfunc.shlder import *
 import QKNTshlder_1 as SDTP
 import ctypes
 import pygame,h5py,datetime
-import pdb,time,cv2,operator,cv,cPickle,math
+import pdb,time,cv2,cPickle
 import numpy as np
 #if sys.hexversion >= 0x03000000:
 #    import _thread as thread
@@ -82,11 +82,7 @@ class BodyGameRuntime(object):
             print ('extract bg....')
         else:
             print 'failed to extract.....'
-                 
-#    def typetext(self,string,pos,color = (255,255,0),fontsize=60,bold=False):
-#        myfont = pygame.font.SysFont("Arial", fontsize,bold)
-#        label = myfont.render(string, 1, color)
-#        self._frame_surface.blit(label, pos)                
+                              
 #========================= original part =======================================
     def draw_body_bone(self, joints, jointPoints, color, joint0, joint1):
         joint0State = joints[joint0].TrackingState;
@@ -151,10 +147,12 @@ class BodyGameRuntime(object):
         global video
         
         cur_frame=0
-        rec_right_shoudler=SDTP.ShoulderTops()   #recording the shoudler movements(record data)
-        pro_right_shoulder=SDTP.ShoulderRoll()   #detecting the shoulder movements(processing data)
+        rec_Rshld=SDTP.ShoulderTops()   #recording the shoudler movements(record data)
+        pro_Rshld=SDTP.ShoulderRoll()   #detecting the shoulder movements(processing data)
+        
+        
         #-all the number in variable names below indicates:        
-        start_shoulder_flag=False #flag to start processing the shoulder when press some key
+        shld_flag=False #flag to start processing the shoulder when press some key
         
         #-for key pressing
         wait_key_count=3
@@ -164,13 +162,10 @@ class BodyGameRuntime(object):
             ST = time.clock()
             bddic={}
             Jdic ={}
+            Jpf = []
+
             
-#            error_code=[1,1] # store the error of patient's behavior (###could write more)
-#                            #1=correct; 2=rise the arm too high;
-#                            #3=something on the shoulder; 4=not facing camera
-#                            #5=too far from camera
-            joints_oneframe=[]
-#            joints_vector=[]
+
             
             #--key pressing--
             if(wait_key_count<3):
@@ -187,11 +182,12 @@ class BodyGameRuntime(object):
                     else:
                         self._handmode = True
                 if press[49]==1:  #.#1 open/close shoulder detection
-                    if start_shoulder_flag==True:
-                        start_shoulder_flag=False
+                    print 'I am innnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
+                    if shld_flag==True:
+                        shld_flag=False
                     else: 
-                        start_shoulder_flag=True
-                if press[50]==1 and start_shoulder_flag: #.#2 initial setting
+                        shld_flag=True
+                if press[50]==1 and shld_flag: #.#2 initial setting
                     pro_right_shoulder.calibration_flag=True
                     pro_right_shoulder.shoulder_roll_count=0
                     pro_right_shoulder.shoulder_updown_count=0
@@ -206,12 +202,7 @@ class BodyGameRuntime(object):
                         self.dimgs = self.imgs.create_group('dimgs')
                         self.bdimgs = self.imgs.create_group('bdimgs')
                         # other data
-#                        self.data = self.dataset.create_group('data') 
-#                        self.jpts = self.data.create_group('jointspts') # jointspts
-#                        self.joints = self.data.create_group('joints')  # joints
-#                        self.jvct = self.data.create_group('joints_vector')  # joints_vector
-                        
-                        
+                     
                     if self.vid_rcd == False:
                         self.vid_rcd = True
                         self.clipNo += 1
@@ -234,7 +225,6 @@ class BodyGameRuntime(object):
                 self.draw_color_frame(frame, self._frame_surface)
                 frame = frame.reshape(1080,1920,4)[:,:,:3]
                 
-            #--- Cool! We have a body frame, so can get skeletons
             if self._kinect.has_new_body_frame(): 
                 self._bodies = self._kinect.get_last_body_frame()
                 
@@ -245,11 +235,7 @@ class BodyGameRuntime(object):
             if self._kinect.has_new_depth_frame():
                 dframe,oridframe = self._kinect.get_last_depth_frame()
                 dframe=dframe.reshape((424,512))                                
-
-            # --- draw skeletons to _frame_surface
             
-                        
-              
             if self._bodies is not None:
                 
                 #self._kinect.testtable()
@@ -260,7 +246,6 @@ class BodyGameRuntime(object):
                     body = self._bodies.bodies[i]
                     
                     if not body.is_tracked: 
-                        #typetext(self._frame_surface,'No human be detected ',(100,100))
                         continue
                     if body.joints[20].Position.z<=cSS_dist:
                         closest_ID=i
@@ -273,92 +258,24 @@ class BodyGameRuntime(object):
                     for ii in xrange(25):
                         Jdic[ii] = joints[ii]
                     
-                    joint_points = self._kinect.body_joints_to_color_space(joints)
-                    joint_points_depth =self._kinect.body_joints_to_depth_space(joints)
+                    Jps = self._kinect.body_joints_to_color_space(joints) #joint points in color domain
+                    dJps =self._kinect.body_joints_to_depth_space(joints) #joint points in depth domain
                     
                     
                     if self._handmode: # whether hand mode is on or not
-                        fextr(frame,bkimg,body,bddic,joint_points,SKELETON_COLORS[i],self._frame_surface)
-#                        hsvimg = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)    
-#                        tmp = np.abs(hsvimg[:,:,2] - bkimg[:,:,2] )                                           
-#                        fgimg = np.zeros([1080,1920])                  
-#                        fgimg[tmp>80] = 1 
-#                                     
-#                    
-#                        if (body.hand_left_state == 2)| (body.hand_left_state == 0): #hand open
-#                            Lhand,bddic['Loffset'],Lrad = handseg(fgimg,joint_points[6],joint_points[7])                  
-#                            bddic['Lhand'] = draw_hand(Lhand,frame,bddic['Loffset'],Lrad,joint_points[6],SKELETON_COLORS[i],self._frame_surface)
-#                            typetext(self._frame_surface,'Lhand :'+repr(len(bddic['Lhand'])) +' fingers ',(100,100)) 
-#                            if  (body.hand_left_state == 2) & ( len(bddic['Lhand'])<=3):
-#                                typetext(self._frame_surface,'Open your left hand more !!',(1000,100),(255,0,0),60,True)
-#                            else:
-#                                typetext(self._frame_surface,'nice job !!',(1600,100),(0,255,0))
-#                        elif (body.hand_left_state == 4): # Lasso
-#                            Lhand,bddic['Loffset'],Lrad = handseg(fgimg,joint_points[6],joint_points[7])                  
-#                            bddic['Lhand'] = draw_hand(Lhand,frame,bddic['Loffset'],Lrad,joint_points[6],SKELETON_COLORS[i],self._frame_surface)
-#                            typetext(self._frame_surface,'Lhand :'+repr(len(bddic['Lhand'])) +' fingers ',(100,100))
-#                                
-#                        elif body.hand_left_state ==3 : # closed
-#                            typetext(self._frame_surface,'Lhand : closed',(100,100))
-#                        else:
-#                            typetext(self._frame_surface,'Lhand : Not detect',(100,100))
-#                            
-#                        typetext(self._frame_surface,'Rhand :'+repr(body.hand_right_state) ,(100,200))     
-#                        if (body.hand_right_state == 2)|(body.hand_right_state == 0):
-#                            Rhand,bddic['Roffset'],Rrad = handseg(fgimg,joint_points[10],joint_points[11])
-#                            bddic['Rhand'] = draw_hand(Rhand,frame,bddic['Roffset'],Rrad, joint_points[10],SKELETON_COLORS[i],self._frame_surface) 
-#                            typetext(self._frame_surface,'Rhand :'+repr(len(bddic['Rhand'])) +' fingers ',(100,150))
-#                            if  (body.hand_right_state == 2) & (len(bddic['Rhand'])<=3):
-#                                typetext(self._frame_surface,'Open your right hand more !!',(1000,150),(255,0,0),60,True)
-#                            else:
-#                                typetext(self._frame_surface,'nice job !!',(1600,150),(0,255,0))
-#                            
-#                        elif (body.hand_right_state == 4):
-#                            Rhand,bddic['Roffset'],Rrad = handseg(fgimg,joint_points[10],joint_points[11])
-#                            bddic['Rhand'] = draw_hand(Rhand,frame,bddic['Roffset'],Rrad, joint_points[10],SKELETON_COLORS[i],self._frame_surface) 
-#                            typetext(self._frame_surface,'Rhand :'+repr(len(bddic['Rhand'])) +' fingers ',(100,150))                                                              
-#                        elif body.hand_right_state ==3 :
-#                            typetext(self._frame_surface,'Rhand : closed',(100,150))
-#                        else:
-#                            typetext(self._frame_surface,'Rhand : Not detect',(100,150))
-#                        
-
-                    self.draw_body(joints, joint_points, SKELETON_COLORS[i])
-                    
-#==============================================================  
-                    #### modified 09/18/2016####
-                    #--shoulder data recording--                    
-                    joints_oneframe.append(joints[4])
-                    joints_oneframe.append(joints[8])
-                    joints_oneframe.append(joints[20])                    
-                    
-                    #---find two shoulder tops
-                    tops=rec_right_shoudler.findShouderTops(self._kinect,bodyidx,  \
-                        joint_points_depth,joints,dframe,closest_ID) 
-                    #---append the left & right shoulder tops
-                    joints_oneframe.append(tops[2])
-                    joints_oneframe.append(tops[3])
-                    #--shoulder data recording over--
-                    
-                    #--shoudler data processing part--
-                    if(start_shoulder_flag):
-                        #---get the data for processing
-                        if len(joints_oneframe)>0:
-                            frame=joints_oneframe
-                            temp_ssy=frame[2].Position.y
-                            temp_ssz=frame[2].Position.z
-                            cur_data_1=frame[1].Position.z-temp_ssz
-                            if(frame[4]==[]):
-                                cur_data_2=-1
-                            else:
-                                cur_data_2=frame[4].y-temp_ssy
-                    
-                        pro_right_shoulder.processShoulderOnce(cur_data_1,cur_data_2,cur_frame)
+                        #finger detect and draw
+                        fextr(frame,bkimg,body,bddic,Jps,SKELETON_COLORS[i],self._frame_surface)
                         
-                    bddic['jointspts'] = joint_points
-                    bddic['depth_jointspts'] = joint_points_depth
+                    self.draw_body(joints, Jps, SKELETON_COLORS[i])
+                    
+#                    Jpf = shld_rcd(joints,dJps,bodyidx,dframe,rec_Rshld,pro_Rshld,\
+#                                                 shld_flag,cur_frame,closest_ID,self._kinect)
+
+                        
+                    bddic['jointspts'] = Jps
+                    bddic['depth_jointspts'] = dJps
                     bddic['joints'] = Jdic                        
-                    bddic['joints_vector'] = joints_oneframe
+                    #bddic['joints_vector'] = Jpf
                     bddic['vidclip'] = self.clipNo
 
 #==============================================================                   
@@ -368,7 +285,7 @@ class BodyGameRuntime(object):
             #--find ID and extract skeleton info and draw over--
                     
             cur_frame+=1
-
+            
             if self.vid_rcd == True:
                 typetext(self._frame_surface,'Video Recording' ,(1550,20),(255,0,0))
                 
@@ -380,58 +297,31 @@ class BodyGameRuntime(object):
             else:
                 typetext(self._frame_surface,'Not Recording' ,(1550,20),(255,0,0))
             
-            h_to_w = float(self._frame_surface.get_height()) / self._frame_surface.get_width()
-            target_height = int(h_to_w * self._screen.get_width())
-            
-            if(len(joints_oneframe)>0 and closest_ID>=0):
-                # render text
-                if(start_shoulder_flag):
-                    string_1='Shoulder Rolls: '+ str(pro_right_shoulder.shoulder_roll_count)    # modified 09/18/2016
-                    #string_2='Shoulder Up&down :' +str(pro_right_shoulder.shoulder_updown_count)    # modified 09/18/2016
-                    #if(pro_right_shoulder.calibration_flag):
-                    #    typetext(self._frame_surface,'Initail personalization ...' ,(100,720),(128,250,180))
-                    #    string_2+='  ini_count: '+str(pro_right_shoulder.move_count)
-                #else:
-                #    string_1='Shoulder recognition NOT start yet'
-                #    string_2='Press 1 to start'
+                    
+            if (shld_flag and closest_ID!=-1):
+
+                Jpf = rec_Rshld.findShouderTops(self._kinect,bodyidx,dJps,joints,dframe,closest_ID)[2:4]
+                if Jpf!=[]:
+                    shld_act(joints,Jpf,pro_Rshld,cur_frame)                    
+                shld_text(pro_Rshld,rec_Rshld,self._frame_surface)
+                    
 
                 
-                    typetext(self._frame_surface,string_1 ,(100,800),(0,128,255))
-                    #typetext(self._frame_surface,string_2 ,(100,850),(0,128,255))
                 
-                if(rec_right_shoudler.error_code[1]==2):
-                    typetext(self._frame_surface,'Please put your arm down' ,(500,50),(255,0,0)) 
-                elif(rec_right_shoudler.error_code[1]==3):
-                    typetext(self._frame_surface,'What is on your shoulder?' ,(500,50),(255,0,0)) 
-                elif(rec_right_shoudler.error_code[0]==4):
-                    typetext(self._frame_surface,'Please step back!' ,(500,50),(255,0,0)) 
-                elif(rec_right_shoudler.error_code[0]==5):
-                    typetext(self._frame_surface,'Please facing the camera!' ,(500,50),(255,0,0))
-                elif(rec_right_shoudler.error_code[0]==6):
-                    typetext(self._frame_surface,'Please stand vertically!' ,(500,50),(255,0,0)) 
-                
+                    
+                    
+            h_to_w = float(self._frame_surface.get_height()) / self._frame_surface.get_width()
+            target_height = int(h_to_w * self._screen.get_width())    
             surface_to_draw = pygame.transform.scale(self._frame_surface, (self._screen.get_width(), target_height));
             
             self._screen.blit(surface_to_draw, (0,0))
             surface_to_draw = None
             pygame.display.update()
             
-                        
-            
-            # --- Go ahead and update the screen with what we've drawn.
-            #pygame.display.flip()
 
-            # --- Limit to 60 frames per second
+            # --- Limit frames per second
             self._clock.tick(fps)
-            
- 
-                    
-            for event in pygame.event.get(): # User did something
-                if event.type == pygame.QUIT: # If user clicked close
-                    self._done = True # Flag that we are done so we exit this loop
-                elif event.type == pygame.VIDEORESIZE: # window resized
-                    self._screen = pygame.display.set_mode(event.dict['size'], 
-                                               pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.RESIZABLE, 32)
+    
         # Close our Kinect sensor, close the window and quit.
             print time.clock()-ST
                
