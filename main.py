@@ -188,9 +188,9 @@ class BodyGameRuntime(object):
                     else: 
                         shld_flag=True
                 if press[50]==1 and shld_flag: #.#2 initial setting
-                    pro_right_shoulder.calibration_flag=True
-                    pro_right_shoulder.shoulder_roll_count=0
-                    pro_right_shoulder.shoulder_updown_count=0
+                    pro_Rshld.calibration_flag=True
+                    pro_Rshld.shoulder_roll_count=0
+                    pro_Rshld.shoulder_updown_count=0
                 if press[114]==1: # use 'r' to open/close video recording
                 
                     if self.clipNo ==0:
@@ -261,24 +261,19 @@ class BodyGameRuntime(object):
                     Jps = self._kinect.body_joints_to_color_space(joints) #joint points in color domain
                     dJps =self._kinect.body_joints_to_depth_space(joints) #joint points in depth domain
                     
-                    
-                    if self._handmode: # whether hand mode is on or not
+                    #   ====   fingers detection  ====
+                    if self._handmode: 
                         #finger detect and draw
                         fextr(frame,bkimg,body,bddic,Jps,SKELETON_COLORS[i],self._frame_surface)
                         
                     self.draw_body(joints, Jps, SKELETON_COLORS[i])
                     
-#                    Jpf = shld_rcd(joints,dJps,bodyidx,dframe,rec_Rshld,pro_Rshld,\
-#                                                 shld_flag,cur_frame,closest_ID,self._kinect)
-
                         
                     bddic['jointspts'] = Jps
                     bddic['depth_jointspts'] = dJps
                     bddic['joints'] = Jdic                        
-                    #bddic['joints_vector'] = Jpf
                     bddic['vidclip'] = self.clipNo
-
-#==============================================================                   
+                  
             else:
                 typetext(self._frame_surface,'No human be detected ',(100,100))
                 
@@ -297,9 +292,9 @@ class BodyGameRuntime(object):
             else:
                 typetext(self._frame_surface,'Not Recording' ,(1550,20),(255,0,0))
             
-                    
-            if (shld_flag and closest_ID!=-1):
 
+            #   ====   Shoulder action detection  ====                    
+            if (shld_flag and closest_ID!=-1):
                 Jpf = rec_Rshld.findShouderTops(self._kinect,bodyidx,dJps,joints,dframe,closest_ID)[2:4]
                 if Jpf!=[]:
                     shld_act(joints,Jpf,pro_Rshld,cur_frame)                    
