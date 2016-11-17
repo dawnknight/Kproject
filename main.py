@@ -27,9 +27,7 @@ fps = 20
 bkimg = np.zeros([1080,1920])
 bdjoints = []
 Jarray  = {}  # joint array
-Rb = []
-Rt = []
-Rk = []
+
 # colors for drawing different bodies 
 SKELETON_COLORS = [pygame.color.THECOLORS["red"], 
                   pygame.color.THECOLORS["blue"], 
@@ -104,7 +102,14 @@ class BodyGameRuntime(object):
         cur_frame=0
         rec_Rshld=SDTP.ShoulderTops()   #recording the shoudler movements(record data)
         pro_Rshld=SDTP.ShoulderRoll()   #detecting the shoulder movements(processing data)
-        
+        Rb = {}
+        Rt = {}
+        Rk = {}
+
+        for ii in self.jorder:
+            Rk[ii]=[]
+            Rt[ii]=[]
+            Rb[ii]=[]
         
         #-all the number in variable names below indicates:        
         shld_flag=False #flag to start processing the shoulder when press some key
@@ -114,7 +119,7 @@ class BodyGameRuntime(object):
         # -------- Main Program Loop -----------
         while not self._done:
             
-            ST = time.clock()
+            #ST = time.clock()
             bddic={}
             Jdic ={}
             Jpf = []
@@ -211,7 +216,7 @@ class BodyGameRuntime(object):
                     joints = body.joints 
                     
                     #reliable initail
-                    tmp = []
+                    
 
                     
                     
@@ -231,26 +236,30 @@ class BodyGameRuntime(object):
                     for ii in self.jorder:
                         try : 
                             Jarray[ii].append(np.array([Jdic[ii].Position.x,Jdic[ii].Position.y,Jdic[ii].Position.z]))
-                        except:
-                            
+                        except:                            
                             Jarray[ii] = []
+                            Rb[ii] = []
                             Jarray[ii].append(np.array([Jdic[ii].Position.x,Jdic[ii].Position.y,Jdic[ii].Position.z]))                            
-                        tmp.append(rel_behav(Jarray[ii]))
+                        Rb[ii].append(rel_behav(Jarray[ii]))
                         
-                    Rb.append(tmp)    
-                    Rt.append(rel_trk(Jdic))
-                    Rk.append(rel_kin(Jdic))
-                    Rel = rel_rate(Rb,Rk,Rt)
+                    rt = rel_trk(Jdic) 
+                    rk = rel_kin(Jdic)
+                    for ii,jj in enumerate(self.jorder):    
+                        Rt[jj].append(rt[ii])
+                        Rk[jj].append(rk[ii])
+                        
+                    Rel = rel_rate(Rb,Rk,Rt,self.jorder)
   
-                    print Rel                      
+                    print Rk                      
                         
                     draw_body(joints, Jps, SKELETON_COLORS[i],self._frame_surface)
-                    
+                    draw_Rel_joints(Jps,Rel,self._frame_surface)
                         
                     bddic['jointspts'] = Jps
                     bddic['depth_jointspts'] = dJps
                     bddic['joints'] = Jdic                        
                     bddic['vidclip'] = self.clipNo
+                    bddic['Rel'] = Rel
                   
             else:
                 typetext(self._frame_surface,'No human be detected ',(100,100))
@@ -302,8 +311,10 @@ class BodyGameRuntime(object):
         self._kinect.close()
         pygame.quit()
         
+        
+        if bdjoints !=[]:
+           cPickle.dump(bdjoints,file(self.dstr+'.pkl','wb')) 
         try:
-            cPickle.dump(bdjoints,file(self.dstr+'.pkl','wb'))
             self.dataset.close()
         except:
             pass

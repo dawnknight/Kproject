@@ -5,6 +5,7 @@ Created on Thu Nov 17 09:50:08 2016
 @author: medialab
 """
 import pygame
+import numpy as np
 
 # values for enumeration '_JointType'
 JointType_SpineBase = 0
@@ -85,3 +86,9 @@ def draw_body( joints, jointPoints, color , surface):
     draw_body_bone(joints, jointPoints, color,  JointType_ElbowLeft,  JointType_WristLeft,surface);
     draw_body_bone(joints, jointPoints, color,  JointType_WristLeft,  JointType_HandLeft,surface);
 
+def draw_Rel_joints(jointPoints,Rel,surface):
+    for i in Rel.keys():
+        try:
+            pygame.draw.circle(surface, (255,0,0), (int(jointPoints[i].x), int(jointPoints[i].y)), np.int((1-Rel[i])*30))    
+        except:
+            pass
