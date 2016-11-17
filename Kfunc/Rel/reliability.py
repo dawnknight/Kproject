@@ -26,19 +26,19 @@ sigma = 1
 gw = 1/(2*np.pi)**2/sigma*np.exp(-0.5*a**2/sigma**2) 
 
 
-def rel_behav(J,th = 3,theta_r=135,theta_f = 90): #behavior term
-    #Jcur : joint position in [f,f-1,f-2,f-3,f-4]
-    #th   : threshold (uint: cm)
+def rel_behav(J,th = 0.03,theta_r=135,theta_f = 90): #behavior term
+    #J : 3D joint position in [...,f-4,f-3,f-2,f-1,f]
+    #th   : threshold (uint: m)
 
     theta = 0
-    if len(J)<5:
+    if len(J)>5:
         for k in xrange(3):
-            dj   = J[k]-J[k+1]
-            dj_1 = J[k+1]-J[k+2]
-            n_dj = np.linalg.norm(dj)*100
-            n_dj_1 = np.linalg.norm(dj_1)*100
+            dj   = J[-(k+1)]-J[-(k+2)]
+            dj_1 = J[-(k+2)]-J[-(k+3)]
+            n_dj = np.linalg.norm(dj)
+            n_dj_1 = np.linalg.norm(dj_1)
             if (n_dj > th) & (n_dj_1 > th):
-                theta += sum([dj[i]*dj_1[i] for i in xrange(3)])/n_dj/n_dj_1
+                theta += np.arccos(sum([dj[i]*dj_1[i] for i in xrange(3)])/n_dj/n_dj_1)/np.pi*180
     return 1-max(min(theta/3,theta_r)-theta_f,0)/(theta_r-theta_f)
         
 def rel_kin(joints): # kinematic term    
@@ -49,6 +49,7 @@ def rel_kin(joints): # kinematic term
     refer2 = [6,5,4,3,1]  
 
     segrel = {}
+    result = []
     cnts = np.zeros(21)
     for i in Tjo:
         segrel[i]=0
@@ -72,18 +73,18 @@ def rel_kin(joints): # kinematic term
         cnts[order3[i]]+=1
 
     for i in Tjo:
-        segrel[i] = 1-(segrel[i]/cnts[i])
+        result.append( 1-(segrel[i]/cnts[i]))
 
-    return segrel
+    return result
 
     
 def rel_trk(joints): # tracking term
-    trkrel = {}
+    trkrel = []
     for i in Tjo:
         if joints[i].TrackingState == 2:
-            trkrel[i] = 1.0
+            trkrel.append(1.0)
         else:
-            trkrel[i] = 0.0
+            trkrel.append(0.0)
 
     return trkrel
     

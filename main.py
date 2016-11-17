@@ -12,6 +12,7 @@ from Kfunc import *
 from Kfunc.IO import *
 from Kfunc.finger import *
 from Kfunc.shlder import *
+from Kfunc.skel import *
 import QKNTshlder_1 as SDTP
 import ctypes
 import pygame,h5py,datetime
@@ -24,10 +25,11 @@ import numpy as np
 fps = 20
 
 bkimg = np.zeros([1080,1920])
-fimgs = []
-bdidximg = []
-depthimg = []
 bdjoints = []
+Jarray  = {}  # joint array
+Rb = []
+Rt = []
+Rk = []
 # colors for drawing different bodies 
 SKELETON_COLORS = [pygame.color.THECOLORS["red"], 
                   pygame.color.THECOLORS["blue"], 
@@ -71,7 +73,7 @@ class BodyGameRuntime(object):
         self._frame_surface = pygame.Surface((self._kinect.color_frame_desc.Width, self._kinect.color_frame_desc.Height), 0, 32)
         # here we will store skeleton data 
         self._bodies = None
-        
+        self.jorder  = [0,1,2,3,4,5,6,8,9,10,20] #joints order we care
         time.sleep(5)
 
 
@@ -83,53 +85,6 @@ class BodyGameRuntime(object):
         else:
             print 'failed to extract.....'
                               
-#========================= original part =======================================
-    def draw_body_bone(self, joints, jointPoints, color, joint0, joint1):
-        joint0State = joints[joint0].TrackingState;
-        joint1State = joints[joint1].TrackingState;
-
-        # both joints are not tracked
-        if (joint0State == PyKinectV2.TrackingState_NotTracked) or (joint1State == PyKinectV2.TrackingState_NotTracked): 
-            return
-
-        # both joints are not *really* tracked
-        if (joint0State == PyKinectV2.TrackingState_Inferred) and (joint1State == PyKinectV2.TrackingState_Inferred):
-            return
-
-        # ok, at least one is good 
-        start = (jointPoints[joint0].x, jointPoints[joint0].y)
-        end = (jointPoints[joint1].x, jointPoints[joint1].y)
-
-        try:
-            pygame.draw.line(self._frame_surface, color, start, end, 8)
-            #lines(Surface, color, closed, pointlist, width=1)
-        except: # need to catch it due to possible invalid positions (with inf)
-            pass
-
-    def draw_body(self, joints, jointPoints, color):
-        # Torso
-        #pdb.set_trace()
-        
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_Head, PyKinectV2.JointType_Neck);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_Neck, PyKinectV2.JointType_SpineShoulder);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_SpineMid);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineMid, PyKinectV2.JointType_SpineBase);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_ShoulderRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineShoulder, PyKinectV2.JointType_ShoulderLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineBase, PyKinectV2.JointType_HipRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_SpineBase, PyKinectV2.JointType_HipLeft);
-        
-        # Right Arm    
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ShoulderRight, PyKinectV2.JointType_ElbowRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ElbowRight, PyKinectV2.JointType_WristRight);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristRight, PyKinectV2.JointType_HandRight);
-
-
-        # Left Arm
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ShoulderLeft, PyKinectV2.JointType_ElbowLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_ElbowLeft, PyKinectV2.JointType_WristLeft);
-        self.draw_body_bone(joints, jointPoints, color, PyKinectV2.JointType_WristLeft, PyKinectV2.JointType_HandLeft);
-
 
 
     def draw_color_frame(self, frame, target_surface):
@@ -255,8 +210,14 @@ class BodyGameRuntime(object):
                     body = self._bodies.bodies[closest_ID]
                     joints = body.joints 
                     
+                    #reliable initail
+                    tmp = []
+
+                    
+                    
                     for ii in xrange(25):
                         Jdic[ii] = joints[ii]
+
                     
                     Jps = self._kinect.body_joints_to_color_space(joints) #joint points in color domain
                     dJps =self._kinect.body_joints_to_depth_space(joints) #joint points in depth domain
@@ -266,7 +227,24 @@ class BodyGameRuntime(object):
                         #finger detect and draw
                         fextr(frame,bkimg,body,bddic,Jps,SKELETON_COLORS[i],self._frame_surface)
                         
-                    self.draw_body(joints, Jps, SKELETON_COLORS[i])
+                    # === joint reliability ===
+                    for ii in self.jorder:
+                        try : 
+                            Jarray[ii].append(np.array([Jdic[ii].Position.x,Jdic[ii].Position.y,Jdic[ii].Position.z]))
+                        except:
+                            
+                            Jarray[ii] = []
+                            Jarray[ii].append(np.array([Jdic[ii].Position.x,Jdic[ii].Position.y,Jdic[ii].Position.z]))                            
+                        tmp.append(rel_behav(Jarray[ii]))
+                        
+                    Rb.append(tmp)    
+                    Rt.append(rel_trk(Jdic))
+                    Rk.append(rel_kin(Jdic))
+                    Rel = rel_rate(Rb,Rk,Rt)
+  
+                    print Rel                      
+                        
+                    draw_body(joints, Jps, SKELETON_COLORS[i],self._frame_surface)
                     
                         
                     bddic['jointspts'] = Jps
@@ -318,7 +296,7 @@ class BodyGameRuntime(object):
             self._clock.tick(fps)
     
         # Close our Kinect sensor, close the window and quit.
-            print time.clock()-ST
+            #print time.clock()-ST
                
             
         self._kinect.close()

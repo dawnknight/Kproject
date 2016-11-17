@@ -9,3 +9,4 @@ from IO import *
 from Rel import *
 from finger import *
 from shlder import *
+from skel import *
