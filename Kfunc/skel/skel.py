@@ -78,13 +78,13 @@ def draw_body( joints, jointPoints, color , surface):
     # Right Arm    
     draw_body_bone(joints, jointPoints, color,  JointType_ShoulderRight,  JointType_ElbowRight,surface);
     draw_body_bone(joints, jointPoints, color,  JointType_ElbowRight,  JointType_WristRight,surface);
-    draw_body_bone(joints, jointPoints, color,  JointType_WristRight,  JointType_HandRight,surface);
+    #draw_body_bone(joints, jointPoints, color,  JointType_WristRight,  JointType_HandRight,surface);
 
 
     # Left Arm
     draw_body_bone(joints, jointPoints, color,  JointType_ShoulderLeft,  JointType_ElbowLeft,surface);
     draw_body_bone(joints, jointPoints, color,  JointType_ElbowLeft,  JointType_WristLeft,surface);
-    draw_body_bone(joints, jointPoints, color,  JointType_WristLeft,  JointType_HandLeft,surface);
+    #draw_body_bone(joints, jointPoints, color,  JointType_WristLeft,  JointType_HandLeft,surface);
 
 def draw_Rel_joints(jointPoints,Rel,surface):
     for i in Rel.keys():
