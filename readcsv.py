@@ -5,35 +5,54 @@ Created on Wed Nov 30 14:41:13 2016
 @author: medialab
 """
 
-import csv,cPickle,pdb
-
+import csv,cPickle,copy#,pdb
+import numpy as np
 
     
-def getAllidx(List, num,offset = 0 ):
-    return [a+offset  for a in range(len(List)) if List[a]==num]    
+def getAllidx(List, num,offset = 0, findcont = False):
+    '''
+    find num index in List
+    
+    if find continues mode on, it will return [seg1, seg2 ... segN]
+    
+    each sgment represent by following structure
+    
+    [previous index which has values, Next index which has values, len of not useful value inside]
+    
+    '''
+    result = [a+offset  for a in range(len(List)) if List[a]==num]
+    if findcont:
+        cont = []
+        for idx , i in enumerate(result):
+            if idx == 0 :
+                tmp = [i]
+            else:
+                if (result[idx]-result[idx-1]) ==1:
+                   tmp.append(i) 
+                else:
+                    cont.append([min(tmp)-1,max(tmp)+1,len(tmp)])
+                    tmp = [i] 
+        
+        cont.append([min(tmp)-1,max(tmp)+1,len(tmp)])
+        return cont 
+    else:
+        return result  
 
-#f = open('test2.csv', 'r')
-#for row in csv.DictReader(f):
-#    print (row['car'])
-#
-#f.close() 
-
-
-#data = {}
-#f =  open('test2.csv', 'r')
-#reader = csv.reader(f)
-#for row in reader:
-#    pdb.set_trace()
-#    a = iter(row[1:])
-#    data[row[0]] = dict(zip(a, a))
-
-
+def interp(start,end,num):
+    # linear interpolation
+    # input data structure start value,end value,num  
+    
+    value = end - start 
+    offset = value/(num+1.)
+    tmp = [start]
+    for i in range(num):
+        tmp.append(start+offset*(i+1))
+        
+    return np.array(tmp)  
+        
 data = {}
 Bpidx = {} # Body part index
-#pos={}
-#pos['X']=[]
-#pos['Y']=[]
-#pos['Z']=[]
+
 
 f =  open('test.csv', 'r')
 for idx,row in enumerate(csv.reader(f)):
@@ -71,8 +90,67 @@ for idx,row in enumerate(csv.reader(f)):
                 else:
                     print row[Bpidx[i][2]]
             
-cPickle.dump(data,file('mocapdata1128.pkl','wb'))
+#cPickle.dump(data,file('mocapdata1128.pkl','wb'))
+
+
+#data = cPickle.load(file('mocapdata1128.pkl','rb'))
+
+dkey = data.keys()
+
+#Dary = np.array([])
+
+for idx,i in enumerate(dkey):
+    if idx == 0:
+        Dary = np.vstack([data[i]['X'],data[i]['Y'],data[i]['Z']])
+    else:
+        Dary = np.vstack([Dary,data[i]['X'],data[i]['Y'],data[i]['Z']])
+        
+
+# complement the array
+
+Comary = copy.copy(Dary) 
+
+for i in range(len(Dary)):
+    if -99.0 in Dary[i]: 
+        foo = getAllidx(Dary[i], -99, findcont = True)
+        for j in foo:
+            if j[0]<0:
+               Comary[:j[1]] = Dary[i][j[1]] 
+            elif j[1]>=len(Dary[i]):
+               Comary[j[0]:j[1]] = Dary[i][j[0]]
+            else:
+               Comary[i][j[0]:j[1]] = interp(Dary[i][j[0]],Dary[i][j[1]],j[2]) 
+
+Data = {}
+Data['keys'] = dkey
+Data['pos']  = Dary
+Data['cpos'] = Comary
+
+cPickle.dump(Data,file('mocapdata1128_array.pkl','wb'))
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
 
