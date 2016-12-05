@@ -22,7 +22,7 @@ import numpy as np
 #    import _thread as thread
 #else:
 #    import thread
-fps = 20
+fps = 30
 
 bkimg = np.zeros([1080,1920])
 bdjoints = []
@@ -250,7 +250,7 @@ class BodyGameRuntime(object):
                         
                     Rel = rel_rate(Rb,Rk,Rt,self.jorder)
   
-                    print Rk                      
+                    #print Rk                      
                         
                     draw_body(joints, Jps, SKELETON_COLORS[i],self._frame_surface)
                     draw_Rel_joints(Jps,Rel,self._frame_surface)
