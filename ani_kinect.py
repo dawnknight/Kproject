@@ -33,16 +33,29 @@ for frame_no in range(50,300):
     xs = []
     ys = []
     zs = []
+    kxs = []
+    kys = []
+    kzs = []
+    
+    
     for i in  xrange( NUM_LABELS ):
-        xs.append(Kbody[keys[i]][0][frame_no])
-        ys.append(Kbody[keys[i]][1][frame_no])
-        zs.append(-1*Kbody[keys[i]][2][frame_no])
+        kxs.append(Kbody[keys[i]][0][frame_no])
+        kys.append(Kbody[keys[i]][1][frame_no])
+        kzs.append(-1*Kbody[keys[i]][2][frame_no])
         
-    ax.scatter(xs, zs, ys)
+    for i in xrange(33):    
+        xs.append(data['rcpos'][i*3][frame_no])
+        ys.append(data['rcpos'][i*3+1][frame_no])
+        zs.append(-1*data['rcpos'][i*3+2][frame_no])        
+        
+        
+    ax.scatter(kxs, kzs, kys, c = 'red', s = 100,label='Kinect Joints')
+    ax.scatter(xs, zs, ys, c = 'green',s = 50,alpha=.4,label='MoCam Joints')
     ax.set_xlim(-0.5,1.5)
     ax.set_ylim(-0.2,1.9)
     ax.set_zlim(1,2)
     ax.set_title(frame_no)
+    plt.legend( loc=1)
     plt.draw()
     plt.pause(1.0/120)
 

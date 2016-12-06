@@ -54,7 +54,7 @@ def Mocam2Kinect(pts):
      head = np.vstack([head_x,head_y,head_z])
         
      neck_x = body[Qing_Chest_1*3+x]
-     neck_y = (body[Qing_Head_1*3+y]-body[Qing_Chest_1*3+y])*0.055+body[Qing_Chest_1*3+y]
+     neck_y = (body[Qing_Head_1*3+y]-body[Qing_Chest_1*3+y])*0.255+body[Qing_Chest_1*3+y]
      neck_z = (body[Qing_Chest_1*3+z]+body[Qing_Chest_4*3+z])/2
      neck = np.vstack([neck_x,neck_y,neck_z])
      
