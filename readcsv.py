@@ -5,9 +5,9 @@ Created on Wed Nov 30 14:41:13 2016
 @author: medialab
 """
 
-import csv,cPickle,copy#,pdb
+import csv,cPickle,copy,pdb
 import numpy as np
-
+import cmath
     
 def getAllidx(List, num,offset = 0, findcont = False):
     '''
@@ -49,6 +49,13 @@ def interp(start,end,num):
         tmp.append(start+offset*(i+1))
         
     return np.array(tmp)  
+
+
+def rotateary(x,y,theta):
+    X = np.cos(theta)*x-np.sin(theta)*y
+    Y = np.sin(theta)*x+np.cos(theta)*y
+
+    return X,Y   
         
 data = {}
 Bpidx = {} # Body part index
@@ -113,18 +120,34 @@ Comary = copy.copy(Dary)
 for i in range(len(Dary)):
     if -99.0 in Dary[i]: 
         foo = getAllidx(Dary[i], -99, findcont = True)
+        
         for j in foo:
+            
             if j[0]<0:
-               Comary[:j[1]] = Dary[i][j[1]] 
+                #pdb.set_trace()
+                Comary[i][:j[1]] = Dary[i][j[1]] 
             elif j[1]>=len(Dary[i]):
-               Comary[j[0]:j[1]] = Dary[i][j[0]]
+                #pdb.set_trace()
+                Comary[i][j[0]:j[1]] = Dary[i][j[0]]
             else:
-               Comary[i][j[0]:j[1]] = interp(Dary[i][j[0]],Dary[i][j[1]],j[2]) 
+                Comary[i][j[0]:j[1]] = interp(Dary[i][j[0]],Dary[i][j[1]],j[2]) 
 
+frame_no = 200
+r,theta = cmath.polar(complex(Comary[20*3][frame_no]-Comary[21*3][frame_no],Comary[20*3+2][frame_no]-Comary[21*3+2][frame_no]))                
+
+
+Rcary = copy.copy(Comary)
+for i in xrange(len(dkey)):
+
+    Rcary[i*3],Rcary[i*3+2] = rotateary(Comary[i*3],Comary[i*3+2],-np.pi/2-theta)    
+                
+                
+               
 Data = {}
 Data['keys'] = dkey
 Data['pos']  = Dary
 Data['cpos'] = Comary
+Data['rcpos'] = Rcary
 
 cPickle.dump(Data,file('mocapdata1128_array.pkl','wb'))
 
