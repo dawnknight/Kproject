@@ -61,7 +61,7 @@ data = {}
 Bpidx = {} # Body part index
 
 
-f =  open('test.csv', 'r')
+f =  open('test2.csv', 'r')
 for idx,row in enumerate(csv.reader(f)):
     if idx ==2:
         a = getAllidx(row,'Marker')[:99]         
@@ -149,7 +149,7 @@ Data['pos']  = Dary
 Data['cpos'] = Comary
 Data['rcpos'] = Rcary
 
-cPickle.dump(Data,file('mocapdata1128_array.pkl','wb'))
+cPickle.dump(Data,file('mocapdata1207_array.pkl','wb'))
 
 
 

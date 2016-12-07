@@ -27,7 +27,7 @@ print 'The total frames: ', NUM_FRAMES
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-for frame_no in range(50,300):
+for frame_no in range(50,726):
     plt.cla()
     
     xs = []
