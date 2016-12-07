@@ -7,11 +7,13 @@ Created on Tue Dec 06 17:18:35 2016
 
 import cPickle 
 import matplotlib.pyplot as plt
-from Mocam2Kinect import *
+
+from Kfunc import *
+from Kfunc.model import *
 from mpl_toolkits.mplot3d import Axes3D
 
 
-data = cPickle.load(file('mocapdata1128_array.pkl','r'))
+data = cPickle.load(file('./output/pkl/mocapdata1128_array.pkl','r'))
 
 
 

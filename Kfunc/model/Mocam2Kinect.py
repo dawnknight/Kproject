@@ -78,7 +78,7 @@ def Mocam2Kinect(pts):
      
      head_x = body[Qing_Head_1*3+x]
      head_y = (body[Qing_Head_1*3+y]-body[Qing_Chest_1*3+y])*0.585+body[Qing_Chest_1*3+y]
-     head_z = body[Qing_Head_3*3+z]
+     head_z = (body[Qing_Chest_1*3+z]+body[Qing_Chest_4*3+z])/2
      head = np.vstack([head_x,head_y,head_z])
         
      neck_x = body[Qing_Chest_1*3+x]
@@ -94,7 +94,7 @@ def Mocam2Kinect(pts):
      spinmid_x = body[Qing_Chest_4*3+x]
      spinmid_y = body[Qing_Chest_4*3+y]
      spinmid_z = (body[Qing_Chest_1*3+z]+body[Qing_Chest_4*3+z])/2
-     spinmid = np.vstack([spinmiddle_x,spinmiddle_y,spinmiddle_z])
+     spinmid = np.vstack([spinmid_x,spinmid_y,spinmid_z])
      
      spinbase_x = (body[Qing_Hip_1*3+x]+body[Qing_Hip_2*3+x])/2
      spinbase_y = (body[Qing_Hip_1*3+y]+body[Qing_Hip_2*3+y])/2
