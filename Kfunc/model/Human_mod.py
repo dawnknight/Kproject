@@ -59,7 +59,14 @@ def uni_vec(Body,start,end):
     tmp = Body[start]-Body[end]
     vlen = sum(tmp**2)**.5
     return tmp/vlen
-  
+
+def uni_vec_pts(Body,start,end):
+    tmp = np.array([Body[start].Position.x-Body[end].Position.x,\
+                    Body[start].Position.y-Body[end].Position.y,\
+                    Body[start].Position.z-Body[end].Position.z])
+    
+    vlen = sum(tmp**2)**.5
+    return tmp/vlen
 
 def human_mod(Body):
     # Body : include all joints 3D position
@@ -123,16 +130,16 @@ def draw_human_mod(Joints):
 def human_mod_pts(Body):
     # Body : include all joints 3D position
     #pdb.set_trace()
-    Vec0001 = uni_vec(Body, JointType_SpineBase    , JointType_SpineMid)
-    Vec0120 = uni_vec(Body, JointType_SpineMid     , JointType_SpineShoulder)
-    Vec2002 = uni_vec(Body, JointType_SpineShoulder, JointType_Neck)
-    Vec0203 = uni_vec(Body, JointType_Neck         , JointType_Head)
-    Vec2004 = uni_vec(Body, JointType_SpineShoulder, JointType_ShoulderLeft)
-    Vec0405 = uni_vec(Body, JointType_ShoulderLeft , JointType_ElbowLeft)
-    Vec0506 = uni_vec(Body, JointType_ElbowLeft    , JointType_WristLeft)
-    Vec2008 = uni_vec(Body, JointType_SpineShoulder, JointType_ShoulderRight)
-    Vec0809 = uni_vec(Body, JointType_ShoulderRight, JointType_ElbowRight)
-    Vec0910 = uni_vec(Body, JointType_ElbowRight   , JointType_WristRight)
+    Vec0001 = uni_vec_pts(Body, JointType_SpineBase    , JointType_SpineMid)
+    Vec0120 = uni_vec_pts(Body, JointType_SpineMid     , JointType_SpineShoulder)
+    Vec2002 = uni_vec_pts(Body, JointType_SpineShoulder, JointType_Neck)
+    Vec0203 = uni_vec_pts(Body, JointType_Neck         , JointType_Head)
+    Vec2004 = uni_vec_pts(Body, JointType_SpineShoulder, JointType_ShoulderLeft)
+    Vec0405 = uni_vec_pts(Body, JointType_ShoulderLeft , JointType_ElbowLeft)
+    Vec0506 = uni_vec_pts(Body, JointType_ElbowLeft    , JointType_WristLeft)
+    Vec2008 = uni_vec_pts(Body, JointType_SpineShoulder, JointType_ShoulderRight)
+    Vec0809 = uni_vec_pts(Body, JointType_ShoulderRight, JointType_ElbowRight)
+    Vec0910 = uni_vec_pts(Body, JointType_ElbowRight   , JointType_WristRight)
     
     
     J[JointType_SpineBase]     = oripos
@@ -150,48 +157,38 @@ def human_mod_pts(Body):
     return J
 
 
-def draw_human_mod_pts(Joints,surface):
-    
-    keys = Joints.keys()
-    #nframe = Joints[keys[0]].shape[1]   #total number of the frames
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    
-    for fno in range(50,726):
-        plt.cla()
-        x = []
-        y = []
-        z = []
-    
-        for i in  xrange(len(keys)):
-            x.append(Joints[keys[i]][0][fno])
-            y.append(Joints[keys[i]][1][fno])
-            z.append(Joints[keys[i]][2][fno])
-    
-        ax.scatter(z, x, y, c = 'red', s = 100)
+def draw_human_mod_pts(Joints,surface,keys):
+    x=[]
+    y=[]
+    z=[]
+    for i in  keys:
+        x.append(Joints[i][0])
+        y.append(Joints[i][1])
+        z.append(Joints[i][2])
         
-        ax.set_xlim(-800,200)
-        ax.set_ylim(-800,800)
-        ax.set_zlim(100,800)
-        ax.set_title(fno)
-        
-        plt.draw()
-        plt.pause(1.0/120)
-           
+    surface.scatter(z, x, y, c = 'red', s = 100)    
+    surface.set_xlim(-200,200)
+    surface.set_ylim(-400,400)
+    surface.set_zlim(100,500)
+    plt.draw()
+    plt.pause(1.0/120)
+
+
+       
     
-import cPickle 
-from Mocam2Kinect import *
-
-
-
-data = cPickle.load(file('../../output/pkl/mocapdata1128_array.pkl','r'))
-
-
-
-
-
-Kbody = Mocam2Kinect(data)
-
-J = human_mod(Kbody)
-draw_human_mod(J)    
+#import cPickle 
+#from Mocam2Kinect import *
+#
+#
+#
+#data = cPickle.load(file('../../output/pkl/mocapdata1128_array.pkl','r'))
+#
+#
+#
+#
+#
+#Kbody = Mocam2Kinect(data)
+#
+#J = human_mod(Kbody)
+#draw_human_mod(J)    
     
