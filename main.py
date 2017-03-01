@@ -13,14 +13,11 @@ from Kfunc.IO import *
 from Kfunc.finger import *
 from Kfunc.shlder import *
 from Kfunc.skel import *
-from Kfunc.model import *
 import QKNTshlder_1 as SDTP
 import ctypes
 import pygame,h5py,datetime
 import pdb,time,cv2,cPickle
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 #if sys.hexversion >= 0x03000000:
 #    import _thread as thread
 #else:
@@ -66,8 +63,6 @@ class BodyGameRuntime(object):
         self._done = False
         self._handmode = False
         self.vid_rcd = False
-        self.model_draw = False
-        self.model_frame = False
         self.clipNo = 0
         #self.cntno = 0
         # Kinect runtime object, we want only color and body frames 
@@ -146,13 +141,6 @@ class BodyGameRuntime(object):
                         self._handmode = False
                     else:
                         self._handmode = True
-                if press[109]==1: #use 'm' to open/close human model
-                    if self.model_draw==True:
-                        self.model_draw = False
-                        self.model_frame = False
-                    else:
-                        self.model_draw = True
-                        
                 if press[49]==1:  #.#1 open/close shoulder detection
                     print 'I am innnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn'
                     if shld_flag==True:
@@ -263,28 +251,10 @@ class BodyGameRuntime(object):
                     Rel = rel_rate(Rb,Rk,Rt,self.jorder)
   
                     #print Rk                      
-                    
-                    #draw skel
+                        
                     draw_body(joints, Jps, SKELETON_COLORS[i],self._frame_surface)
                     draw_Rel_joints(Jps,Rel,self._frame_surface)
-                    
-                    #draw unify human model
-                    if self.model_draw:
-                        modJoints = human_mod_pts(joints)
                         
-                        if not self.model_frame :
-                            fig = plt.figure() 
-                            ax = fig.add_subplot(111, projection='3d')
-                            keys = modJoints.keys()
-                            self.model_frame = True
-                        else:
-                            plt.cla()
-                        
-                        draw_human_mod_pts(modJoints,ax,keys)
-                        
-                        #pdb.set_trace()
-                    
-                    
                     bddic['jointspts'] = Jps
                     bddic['depth_jointspts'] = dJps
                     bddic['joints'] = Jdic                        
